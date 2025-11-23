@@ -1,7 +1,7 @@
 {
   "name": "simple-torrent",
   "productName": "SimpleTorrent",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A modern, minimalist torrent client built with Electron and React, focused on simplicity and performance.",
   "author": {
     "name": "iamvany",

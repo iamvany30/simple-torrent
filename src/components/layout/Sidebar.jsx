@@ -54,7 +54,7 @@ const Sidebar = ({ currentView, setView, stats }) => {
       <UpdaterStatus />
       
       <div className="version-tag">
-        v1.0.4 // VOID
+        v1.0.5 // VOID
       </div>
     </aside>
   );

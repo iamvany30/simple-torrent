@@ -1,7 +1,7 @@
 # SimpleTorrent // VOID
 
 ![Version](https://img.shields.io/badge/version-1.0.5-ccff00?style=flat-square&labelColor=050505)
-![License](https://img.shields.io/badge/license-ISC-white?style=flat-square&labelColor=050505)
+![License](https://img.shields.io/badge/license-MIT-white?style=flat-square&labelColor=050505)
 ![Platform](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux-grey?style=flat-square&labelColor=050505)
 
 **SimpleTorrent** — это современный, минималистичный торрент-клиент, построенный на базе Electron и WebTorrent. Приложение отличается уникальным "Void" дизайном, высокой производительностью и отсутствием лишнего визуального шума.

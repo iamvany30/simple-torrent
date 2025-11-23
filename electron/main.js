@@ -94,7 +94,7 @@ app.whenReady().then(() => {
   notificationManager.init(torrentEngine, mainWindow);
 
   if (!isDev) {
-    autoUpdater.checkForUpdatesAndNotify();
+    autoUpdater.checkForUpdates();
   }
 
   mainWindow.webContents.on('did-finish-load', () => {

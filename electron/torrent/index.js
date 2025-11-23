@@ -1,11 +1,6 @@
-// ==================================================
-// FILE: electron/torrent/index.js (ФИНАЛЬНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ)
-// ==================================================
 import WebTorrent from 'webtorrent';
 import { EventEmitter } from 'events';
 import fs from 'fs';
-
-// Импорт внутренних модулей
 import { PATHS } from './constants.js';
 import { store } from './store.js';
 import { StreamServer } from './server.js';
@@ -16,14 +11,12 @@ import { RssManager } from './rss.js';
 class TorrentEngine extends EventEmitter {
   constructor() {
     super();
-
     this.client = new WebTorrent({
       maxConns: store.getConfig().maxConns,
       dht: true,
       lsd: true,
       webSeeds: true
     });
-
     this.server = new StreamServer(this.client);
     this.formatter = new DataFormatter(this.server);
     this.watcher = new FolderWatcher((path) => {
@@ -34,7 +27,6 @@ class TorrentEngine extends EventEmitter {
       console.log('[RSS] Auto-adding torrent from feed:', url);
       this.startDownload(url).catch(e => console.error('[RSS] Download Error:', e.message));
     });
-
     this.pausedTorrents = new Set();
     this._initHandlers();
     setTimeout(() => this._bootstrap(), 1000);
@@ -53,22 +45,17 @@ class TorrentEngine extends EventEmitter {
     });
   }
 
-
   async startDownload(magnetOrPath, config = {}, saveToState = true) {
     const finalPath = config.path || store.getConfig().downloadPath;
-    
     return new Promise((resolve, reject) => {
       const isMagnet = magnetOrPath.startsWith('magnet:');
       const isUrl = magnetOrPath.startsWith('http://') || magnetOrPath.startsWith('https://');
       const isFile = !isMagnet && !isUrl && fs.existsSync(magnetOrPath);
-
       if (!isMagnet && !isUrl && !isFile) {
         return reject(new Error(`Source not found or invalid: ${magnetOrPath}`));
       }
-
       try {
         const torrent = this.client.add(magnetOrPath, { path: finalPath });
-
         const onReady = () => {
           this._initTorrent(torrent, config);
           if (saveToState) this._persist();
@@ -76,7 +63,6 @@ class TorrentEngine extends EventEmitter {
           resolve({ id: torrent.infoHash });
         };
         const onError = (err) => err.message.includes('duplicate') ? resolve({ duplicate: true }) : reject(err);
-
         if (torrent.infoHash) onReady();
         else {
           torrent.once('infoHash', onReady);
@@ -104,15 +90,13 @@ class TorrentEngine extends EventEmitter {
   pauseTorrent(id) {
     const t = this.client.get(id);
     if (!t) return;
-    
     this.pausedTorrents.add(id);
-    
     if (t.pieces && t.pieces.length > 0) {
       t.deselect(0, t.pieces.length - 1, false);
     }
-    
-    t.wires.forEach(w => w.destroy());
-    
+    if (t.wires) {
+      t.wires.forEach(w => w.destroy());
+    }
     this.emit('torrentPaused', { id });
     this._persist();
   }
@@ -120,11 +104,9 @@ class TorrentEngine extends EventEmitter {
   resumeTorrent(id) {
     const t = this.client.get(id);
     if (!t || t.progress === 1) return;
-
     this.pausedTorrents.delete(id);
     t.select(0, t.pieces.length - 1, false);
-    t.resume(); 
-
+    t.resume();
     this.emit('torrentResumed', { id });
     this._persist();
   }
@@ -159,11 +141,9 @@ class TorrentEngine extends EventEmitter {
   
   _initTorrent(torrent, config) {
     const hash = torrent.infoHash;
-    
     torrent.addedDate = config.addedDate || Date.now();
     if (config.completedDate) torrent.completedDate = config.completedDate;
     if (config.paused) this.pausedTorrents.add(hash);
-
     torrent.on('metadata', () => {
       if (!this.pausedTorrents.has(hash)) {
         torrent.select(0, torrent.pieces.length - 1, false);
@@ -171,18 +151,13 @@ class TorrentEngine extends EventEmitter {
       this._persist();
       this.emit('metadata', { id: hash });
     });
-    
     torrent.on('done', () => {
       console.log(`[Engine] ✅ DOWNLOAD COMPLETE: ${torrent.name}. Stopping torrent to prevent seeding.`);
       torrent.completedDate = Date.now();
-      
       this.pauseTorrent(hash);
-      
       this.emit('complete', { id: hash });
     });
-    
     torrent.on('error', (e) => console.warn(`[Engine] Torrent warning ${hash.slice(0,6)}:`, e.message));
-
     if (torrent.files?.length > 0 && !this.pausedTorrents.has(hash)) {
        torrent.select(0, torrent.pieces.length - 1, false);
     }

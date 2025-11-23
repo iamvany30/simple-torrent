@@ -30,7 +30,6 @@
     "electron:dev": "wait-on tcp:5173 && cross-env NODE_ENV=development electron .",
     "dev": "concurrently -k \"npm:react:dev\" \"npm:electron:dev\"",
     "build": "npm run react:build && electron-builder",
-    "//-- НОВЫЙ СКРИПТ ДЛЯ ПУБЛИКАЦИИ --//": "",
     "release": "npm run react:build && electron-builder --publish always"
   },
   "dependencies": {
@@ -65,7 +64,6 @@
       "electron/**/*",
       "resources/**/*"
     ],
-    "//-- НАСТРОЙКА ПУБЛИКАЦИИ ДЛЯ АПДЕЙТЕРА --//": "",
     "publish": [
       {
         "provider": "github",

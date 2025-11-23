@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
-
 import { useDragDrop } from './hooks/useDragDrop';
 import { useTorrentEngine } from './hooks/useTorrentEngine';
-
 import Sidebar from './components/layout/Sidebar';
 import TitleBar from './components/layout/TitleBar';
 import DashboardView from './views/DashboardView';
@@ -28,7 +26,10 @@ function App() {
     addTorrent,
     pauseTorrent,
     resumeTorrent,
-    removeTorrent
+    removeTorrent,
+    loadSettings,
+    saveSettings,
+    resetApp
   } = useTorrentEngine();
 
   const isDragging = useDragDrop(addTorrent);
@@ -39,11 +40,7 @@ function App() {
       <div className="ambient-noise" />
       
       <div className="app-body">
-        <Sidebar
-          currentView={currentView}
-          setView={setCurrentView}
-          stats={stats} 
-        />
+        <Sidebar currentView={currentView} setView={setCurrentView} stats={stats} />
         
         {currentView === 'dashboard' && (
           <DashboardView
@@ -56,7 +53,11 @@ function App() {
 
         {currentView === 'settings' && (
           <div className="main-content">
-            <SettingsPanel />
+            <SettingsPanel
+              onLoad={loadSettings}
+              onSave={saveSettings}
+              onReset={resetApp}
+            />
           </div>
         )}
       </div>

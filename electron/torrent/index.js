@@ -1,1 +1,221 @@
-import WebTorrent from"webtorrent";import{EventEmitter}from"events";import fs from"fs";import{PATHS}from"./constants.js";import{store}from"./store.js";import{StreamServer}from"./server.js";import{DataFormatter}from"./formatter.js";import{FolderWatcher}from"./watcher.js";import{RssManager}from"./rss.js";class TorrentEngine extends EventEmitter{constructor(){super(),this.client=new WebTorrent({maxConns:store.getConfig().maxConns,dht:!0,lsd:!0,webSeeds:!0}),this.server=new StreamServer(this.client),this.formatter=new DataFormatter(this.server),this.watcher=new FolderWatcher(e=>{console.log("[Watcher] Adding torrent:",e),this.startDownload(e).catch(e=>console.error("[Watcher] Error:",e.message))}),this.rss=new RssManager(e=>{console.log("[RSS] Auto-adding torrent from feed:",e),this.startDownload(e).catch(e=>console.error("[RSS] Download Error:",e.message))}),this.pausedTorrents=new Set,this._initHandlers(),setTimeout(()=>this._bootstrap(),1e3)}async _bootstrap(){await this._restoreState(),this.server.start(),this._applyConfig()}_initHandlers(){this.client.on("error",e=>{console.error("[Engine] Critical Client Error:",e.message),this.emit("error",e.message)})}async startDownload(e,t={},s=!0){const r=t.path||store.getConfig().downloadPath;return new Promise((o,n)=>{const i=e.startsWith("magnet:"),a=e.startsWith("http://")||e.startsWith("https://"),d=!i&&!a&&fs.existsSync(e);if(!i&&!a&&!d)return n(new Error(`Source not found or invalid: ${e}`));try{const i=this.client.add(e,{path:r}),a=()=>{this._initTorrent(i,t),s&&this._persist(),this.emit("torrentAdded",{id:i.infoHash}),o({id:i.infoHash})},d=e=>e.message.includes("duplicate")?o({duplicate:!0}):n(e);i.infoHash?a():(i.once("infoHash",a),i.once("error",d))}catch(e){e.message.includes("duplicate")?o({duplicate:!0}):n(e)}})}removeTorrent(e,t=!1){this.pausedTorrents.delete(e);try{this.client.remove(e,{destroyStore:t},t=>{t||(this.emit("torrentRemoved",{id:e}),this._persist())})}catch(e){console.warn("[Engine] Remove failed:",e.message)}}pauseTorrent(e){const t=this.client.get(e);t&&(this.pausedTorrents.add(e),t.deselect(0,t.pieces.length-1,!1),t.wires.forEach(e=>e.destroy()),this.emit("torrentPaused",{id:e}),this._persist())}resumeTorrent(e){const t=this.client.get(e);t&&1!==t.progress&&(this.pausedTorrents.delete(e),t.select(0,t.pieces.length-1,!1),t.resume(),this.emit("torrentResumed",{id:e}),this._persist())}getSummary(){return{torrents:this.formatter.formatSummary(this.client.torrents,this.pausedTorrents),stats:{downloaded:this.client.downloaded,uploaded:this.client.uploaded,downloadSpeed:this.client.downloadSpeed,uploadSpeed:this.client.uploadSpeed}}}getConfig(){return store.getConfig()}saveConfig(e){store.saveConfig(e),this._applyConfig()}hardReset(){this.client.torrents.forEach(e=>this.client.remove(e.infoHash)),this.pausedTorrents.clear(),fs.existsSync(PATHS.STATE)&&fs.unlinkSync(PATHS.STATE),this.emit("update")}async destroy(){return this._persist(),this.server.stop(),this.rss.stop(),new Promise(e=>this.client.destroy(e))}_initTorrent(e,t){const s=e.infoHash;e.addedDate=t.addedDate||Date.now(),t.completedDate&&(e.completedDate=t.completedDate),t.paused&&this.pausedTorrents.add(s),e.on("metadata",()=>{this.pausedTorrents.has(s)||e.select(0,e.pieces.length-1,!1),this._persist(),this.emit("metadata",{id:s})}),e.on("done",()=>{console.log(`[Engine] ✅ DOWNLOAD COMPLETE: ${e.name}. Stopping torrent.`),e.completedDate=Date.now(),this.pauseTorrent(s),this.emit("complete",{id:s})}),e.on("error",e=>console.warn(`[Engine] Torrent warning ${s.slice(0,6)}:`,e.message)),e.files?.length>0&&!this.pausedTorrents.has(s)&&e.select(0,e.pieces.length-1,!1)}_applyConfig(){const e=store.getConfig();this.watcher.update(e),this.rss.start(e.rssFeeds),this.client.throttleDownload(e.downloadLimit||-1),this.client.throttleUpload(e.uploadLimit||-1)}_persist(){const e=this.client.torrents.map(e=>({magnetURI:e.magnetURI,path:e.path,isPaused:this.pausedTorrents.has(e.infoHash),addedDate:e.addedDate,completedDate:e.completedDate}));store.saveState(e)}async _restoreState(){const e=store.getState().map(e=>this.startDownload(e.magnetURI,{...e},!1).catch(e=>console.warn(`[Engine] Restore failed: ${e.message}`)));await Promise.all(e),this.emit("torrentAdded",{restored:!0})}}export const torrentEngine=new TorrentEngine;
+// ==================================================
+// FILE: electron/torrent/index.js (ФИНАЛЬНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ)
+// ==================================================
+import WebTorrent from 'webtorrent';
+import { EventEmitter } from 'events';
+import fs from 'fs';
+
+// Импорт внутренних модулей
+import { PATHS } from './constants.js';
+import { store } from './store.js';
+import { StreamServer } from './server.js';
+import { DataFormatter } from './formatter.js';
+import { FolderWatcher } from './watcher.js';
+import { RssManager } from './rss.js';
+
+class TorrentEngine extends EventEmitter {
+  constructor() {
+    super();
+
+    this.client = new WebTorrent({
+      maxConns: store.getConfig().maxConns,
+      dht: true,
+      lsd: true,
+      webSeeds: true
+    });
+
+    this.server = new StreamServer(this.client);
+    this.formatter = new DataFormatter(this.server);
+    this.watcher = new FolderWatcher((path) => {
+      console.log('[Watcher] Adding torrent:', path);
+      this.startDownload(path).catch(e => console.error('[Watcher] Error:', e.message));
+    });
+    this.rss = new RssManager((url) => {
+      console.log('[RSS] Auto-adding torrent from feed:', url);
+      this.startDownload(url).catch(e => console.error('[RSS] Download Error:', e.message));
+    });
+
+    this.pausedTorrents = new Set();
+    this._initHandlers();
+    setTimeout(() => this._bootstrap(), 1000);
+  }
+
+  async _bootstrap() {
+    await this._restoreState();
+    this.server.start();
+    this._applyConfig();
+  }
+
+  _initHandlers() {
+    this.client.on('error', (err) => {
+      console.error('[Engine] Critical Client Error:', err.message);
+      this.emit('error', err.message);
+    });
+  }
+
+
+  async startDownload(magnetOrPath, config = {}, saveToState = true) {
+    const finalPath = config.path || store.getConfig().downloadPath;
+    
+    return new Promise((resolve, reject) => {
+      const isMagnet = magnetOrPath.startsWith('magnet:');
+      const isUrl = magnetOrPath.startsWith('http://') || magnetOrPath.startsWith('https://');
+      const isFile = !isMagnet && !isUrl && fs.existsSync(magnetOrPath);
+
+      if (!isMagnet && !isUrl && !isFile) {
+        return reject(new Error(`Source not found or invalid: ${magnetOrPath}`));
+      }
+
+      try {
+        const torrent = this.client.add(magnetOrPath, { path: finalPath });
+
+        const onReady = () => {
+          this._initTorrent(torrent, config);
+          if (saveToState) this._persist();
+          this.emit('torrentAdded', { id: torrent.infoHash });
+          resolve({ id: torrent.infoHash });
+        };
+        const onError = (err) => err.message.includes('duplicate') ? resolve({ duplicate: true }) : reject(err);
+
+        if (torrent.infoHash) onReady();
+        else {
+          torrent.once('infoHash', onReady);
+          torrent.once('error', onError);
+        }
+      } catch (err) {
+        if (err.message.includes('duplicate')) resolve({ duplicate: true });
+        else reject(err);
+      }
+    });
+  }
+
+  removeTorrent(id, deleteFiles = false) {
+    this.pausedTorrents.delete(id);
+    try {
+      this.client.remove(id, { destroyStore: deleteFiles }, (err) => {
+        if (!err) {
+          this.emit('torrentRemoved', { id });
+          this._persist();
+        }
+      });
+    } catch (e) { console.warn(`[Engine] Remove failed:`, e.message); }
+  }
+
+  pauseTorrent(id) {
+    const t = this.client.get(id);
+    if (!t) return;
+    
+    this.pausedTorrents.add(id);
+    
+    if (t.pieces && t.pieces.length > 0) {
+      t.deselect(0, t.pieces.length - 1, false);
+    }
+    
+    t.wires.forEach(w => w.destroy());
+    
+    this.emit('torrentPaused', { id });
+    this._persist();
+  }
+
+  resumeTorrent(id) {
+    const t = this.client.get(id);
+    if (!t || t.progress === 1) return;
+
+    this.pausedTorrents.delete(id);
+    t.select(0, t.pieces.length - 1, false);
+    t.resume(); 
+
+    this.emit('torrentResumed', { id });
+    this._persist();
+  }
+
+  getSummary() {
+    return {
+      torrents: this.formatter.formatSummary(this.client.torrents, this.pausedTorrents),
+      stats: {
+        downloaded: this.client.downloaded,
+        uploaded: this.client.uploaded,
+        downloadSpeed: this.client.downloadSpeed,
+        uploadSpeed: this.client.uploadSpeed
+      }
+    };
+  }
+
+  getConfig() { return store.getConfig(); }
+  saveConfig(newConfig) { store.saveConfig(newConfig); this._applyConfig(); }
+  hardReset() {
+    this.client.torrents.forEach(t => this.client.remove(t.infoHash));
+    this.pausedTorrents.clear();
+    if (fs.existsSync(PATHS.STATE)) fs.unlinkSync(PATHS.STATE);
+    this.emit('update');
+  }
+
+  async destroy() {
+    this._persist();
+    this.server.stop();
+    this.rss.stop();
+    return new Promise(r => this.client.destroy(r));
+  }
+  
+  _initTorrent(torrent, config) {
+    const hash = torrent.infoHash;
+    
+    torrent.addedDate = config.addedDate || Date.now();
+    if (config.completedDate) torrent.completedDate = config.completedDate;
+    if (config.paused) this.pausedTorrents.add(hash);
+
+    torrent.on('metadata', () => {
+      if (!this.pausedTorrents.has(hash)) {
+        torrent.select(0, torrent.pieces.length - 1, false);
+      }
+      this._persist();
+      this.emit('metadata', { id: hash });
+    });
+    
+    torrent.on('done', () => {
+      console.log(`[Engine] ✅ DOWNLOAD COMPLETE: ${torrent.name}. Stopping torrent to prevent seeding.`);
+      torrent.completedDate = Date.now();
+      
+      this.pauseTorrent(hash);
+      
+      this.emit('complete', { id: hash });
+    });
+    
+    torrent.on('error', (e) => console.warn(`[Engine] Torrent warning ${hash.slice(0,6)}:`, e.message));
+
+    if (torrent.files?.length > 0 && !this.pausedTorrents.has(hash)) {
+       torrent.select(0, torrent.pieces.length - 1, false);
+    }
+  }
+
+  _applyConfig() {
+    const cfg = store.getConfig();
+    this.watcher.update(cfg);
+    this.rss.start(cfg.rssFeeds);
+    this.client.throttleDownload(cfg.downloadLimit || -1);
+    this.client.throttleUpload(cfg.uploadLimit || -1);
+  }
+
+  _persist() {
+    const state = this.client.torrents.map(t => ({
+      magnetURI: t.magnetURI,
+      path: t.path,
+      isPaused: this.pausedTorrents.has(t.infoHash),
+      addedDate: t.addedDate,
+      completedDate: t.completedDate
+    }));
+    store.saveState(state);
+  }
+
+  async _restoreState() {
+    const state = store.getState();
+    const promises = state.map(item => 
+      this.startDownload(item.magnetURI, { ...item }, false)
+        .catch(err => console.warn(`[Engine] Restore failed: ${err.message}`))
+    );
+    await Promise.all(promises);
+    this.emit('torrentAdded', { restored: true }); 
+  }
+}
+
+export const torrentEngine = new TorrentEngine();

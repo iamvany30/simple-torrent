@@ -5,7 +5,7 @@ import electronUpdater from 'electron-updater';
 import { createMainWindow } from './window.js';
 import { setupIPC } from './ipc.js';
 import { torrentEngine } from './torrent/index.js';
-
+import { notificationManager } from './notifications.js';
 const { autoUpdater } = electronUpdater;
 
 let mainWindow = null;
@@ -90,6 +90,8 @@ app.whenReady().then(() => {
   mainWindow = createMainWindow();
   setupIPC(mainWindow);
   createTray();
+
+  notificationManager.init(torrentEngine, mainWindow);
 
   if (!isDev) {
     autoUpdater.checkForUpdatesAndNotify();

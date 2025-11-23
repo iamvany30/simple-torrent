@@ -3,6 +3,12 @@ import { useTranslation } from 'react-i18next';
 import './SettingsPanel.css';
 import LanguageSwitcher from './LanguageSwitcher';
 
+const ToggleSwitch = ({ checked, onChange }) => (
+  <div className="toggle-switch" onClick={() => onChange(!checked)}>
+    <div className={`knob ${checked ? 'active' : ''}`} />
+  </div>
+);
+
 const SettingsPanel = ({ onLoad, onSave, onReset }) => {
   const { t } = useTranslation();
   const [settings, setSettings] = useState({
@@ -11,6 +17,7 @@ const SettingsPanel = ({ onLoad, onSave, onReset }) => {
     enableWatch: false,
     watchPath: '',
     autoLaunch: false,
+    showNotificationsOnComplete: true,
   });
   const [isDirty, setIsDirty] = useState(false);
 
@@ -95,6 +102,17 @@ const SettingsPanel = ({ onLoad, onSave, onReset }) => {
         </div>
 
         <div className="setting-item">
+          <h4 className="section-title">{t('settings.notifications')}</h4>
+          <div className="checkbox-row">
+            <label>{t('settings.show_notification_on_complete')}</label>
+            <ToggleSwitch
+              checked={settings.showNotificationsOnComplete || false}
+              onChange={(checked) => handleChange('showNotificationsOnComplete', checked)}
+            />
+          </div>
+        </div>
+
+        <div className="setting-item">
           <h4 className="section-title">{t('settings.connections')}</h4>
           <label>{t('settings.max_conns')}</label>
           <input
@@ -104,7 +122,6 @@ const SettingsPanel = ({ onLoad, onSave, onReset }) => {
           />
         </div>
 
-        {/* --- Language --- */}
          <div className="setting-item">
           <h4 className="section-title">{t('settings.language')}</h4>
            <LanguageSwitcher />
@@ -122,11 +139,5 @@ const SettingsPanel = ({ onLoad, onSave, onReset }) => {
     </div>
   );
 };
-
-const ToggleSwitch = ({ checked, onChange }) => (
-  <div className="toggle-switch" onClick={() => onChange(!checked)}>
-    <div className={`knob ${checked ? 'active' : ''}`} />
-  </div>
-);
 
 export default SettingsPanel;

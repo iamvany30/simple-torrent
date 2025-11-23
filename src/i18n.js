@@ -41,6 +41,8 @@ const resources = {
         max_conns: 'Max Connections',
         automation: 'AUTOMATION',
         auto_launch: 'Launch at System Startup',
+        notifications: 'NOTIFICATIONS',
+        show_notification_on_complete: 'Show notification on download complete',
         language: 'INTERFACE LANGUAGE',
         save: 'COMMIT CHANGES',
         reset: 'FACTORY RESET'
@@ -89,6 +91,8 @@ const resources = {
         max_conns: 'Макс. соединений',
         automation: 'АВТОМАТИЗАЦИЯ',
         auto_launch: 'Запускать при старте системы',
+        notifications: 'УВЕДОМЛЕНИЯ',
+        show_notification_on_complete: 'Показывать уведомление по завершении загрузки',
         language: 'ЯЗЫК ИНТЕРФЕЙСА',
         save: 'ПРИМЕНИТЬ',
         reset: 'ПОЛНЫЙ СБРОС'

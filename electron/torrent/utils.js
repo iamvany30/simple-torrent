@@ -1,0 +1,1 @@
+export const debounce=(e,t)=>{let o;return(...r)=>{clearTimeout(o),o=setTimeout(()=>e(...r),t)}};export const formatSpeed=e=>`${e}/s`;

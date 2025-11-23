@@ -1,0 +1,28 @@
+.lang-switcher {
+  display: inline-flex;
+  background: #000;
+  border: 1px solid var(--border-dim);
+  padding: 4px;
+}
+.lang-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+.lang-btn:hover { color: #fff; }
+.lang-btn.active {
+  background: var(--accent-color);
+  color: #000;
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+.lang-divider {
+  display: flex;
+  align-items: center;
+  color: var(--border-dim);
+  padding: 0 5px;
+  font-size: 0.8rem;
+}

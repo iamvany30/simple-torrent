@@ -1,0 +1,1 @@
+import chokidar from"chokidar";export class FolderWatcher{constructor(t){this.watcher=null,this.onAdd=t}update(t){this.watcher&&(this.watcher.close(),this.watcher=null),t.enableWatch&&t.watchPath&&(this.watcher=chokidar.watch(t.watchPath,{ignored:/(^|[\/\\])\../,persistent:!0,awaitWriteFinish:!0}),this.watcher.on("add",t=>{t.endsWith(".torrent")&&this.onAdd(t)}))}}

@@ -1,0 +1,1 @@
+import{ipcMain}from"electron";export function setupWindowIPC(i){ipcMain.on("window:minimize",()=>{i&&i.minimize()}),ipcMain.on("window:maximize",()=>{i&&(i.isMaximized()?i.unmaximize():i.maximize())}),ipcMain.on("window:close",()=>{i&&i.close()}),ipcMain.handle("window:is-maximized",()=>!!i&&i.isMaximized())}

@@ -1,0 +1,113 @@
+{
+  "name": "simple-torrent",
+  "productName": "SimpleTorrent",
+  "version": "1.0.0",
+  "description": "A minimal, modern torrent client built with Electron and React, focused on simplicity and performance.",
+  "author": {
+    "name": "iamvany",
+    "email": "mrvanvany@gmail.com"
+  },
+  "license": "ISC",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iamvany30/simple-torrent.git"
+  },
+  "bugs": {
+    "url": "https://github.com/iamvany30/simple-torrent/issues"
+  },
+  "keywords": [
+    "torrent",
+    "webtorrent",
+    "electron",
+    "react"
+  ],
+  "main": "electron/main.js",
+  "type": "module",
+  "scripts": {
+    "react:dev": "vite",
+    "react:build": "vite build",
+    "electron:dev": "wait-on tcp:5173 && cross-env NODE_ENV=development electron .",
+    "dev": "concurrently -k \"npm:react:dev\" \"npm:electron:dev\"",
+    "build": "npm run react:build && electron-builder",
+    "//-- НОВЫЙ СКРИПТ ДЛЯ ПУБЛИКАЦИИ --//": "",
+    "release": "npm run react:build && electron-builder --publish always"
+  },
+  "dependencies": {
+    "chokidar": "^3.5.3",
+    "electron-updater": "^6.6.2",
+    "i18next": "^23.8.2",
+    "i18next-browser-languagedetector": "^7.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-i18next": "^14.0.5",
+    "rss-parser": "^3.13.0",
+    "webtorrent": "^2.1.32"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^28.2.3",
+    "electron-builder": "^24.9.1",
+    "vite": "^5.1.4",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.simpletorrent.app",
+    "productName": "SimpleTorrent",
+    "directories": {
+      "output": "release",
+      "buildResources": "resources"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "resources/**/*"
+    ],
+    "//-- НАСТРОЙКА ПУБЛИКАЦИИ ДЛЯ АПДЕЙТЕРА --//": "",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "iamvany30",
+        "repo": "simple-torrent"
+      }
+    ],
+    "win": {
+      "icon": "resources/icons/logo.ico",
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "runAfterFinish": true
+    },
+    "mac": {
+      "icon": "resources/icons/logo.icns",
+      "category": "public.app-category.utilities",
+      "target": [
+        "dmg"
+      ]
+    },
+    "linux": {
+      "icon": "resources/icons",
+      "category": "Network",
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    },
+    "fileAssociations": [
+      {
+        "ext": "torrent",
+        "name": "Torrent File",
+        "role": "Viewer",
+        "icon": "resources/icons/logo.ico"
+      }
+    ]
+  }
+}

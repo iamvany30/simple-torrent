@@ -1,19 +1,17 @@
 import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import electronUpdater from 'electron-updater';
 import { createMainWindow } from './window.js';
 import { setupIPC } from './ipc.js';
 import { torrentEngine } from './torrent/index.js';
 
-import electronUpdater from 'electron-updater';
 const { autoUpdater } = electronUpdater;
 
 let mainWindow = null;
 let tray = null;
 let isQuitting = false;
 let initialFileOrUrl = null;
-
-
 
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -28,8 +26,6 @@ if (!gotTheLock) {
     }
   });
 }
-
-
 
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
@@ -48,8 +44,6 @@ app.on('open-file', (event, filePath) => {
   }
 });
 
-
-
 const sendUpdateStatusToWindow = (payload) => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('updater:status', payload);
@@ -65,8 +59,6 @@ autoUpdater.on('error', (error) => sendUpdateStatusToWindow({ status: 'error', e
 ipcMain.on('updater:quit-and-install', () => {
   autoUpdater.quitAndInstall();
 });
-
-
 
 const isDev = process.env.NODE_ENV === 'development';
 if (isDev) {
@@ -90,8 +82,6 @@ if (isDev) {
   });
 }
 
-
-
 app.whenReady().then(() => {
   if (process.platform === 'win32') {
     app.setAppUserModelId('com.simpletorrent.app');
@@ -104,7 +94,7 @@ app.whenReady().then(() => {
   if (!isDev) {
     autoUpdater.checkForUpdatesAndNotify();
   }
-  
+
   mainWindow.webContents.on('did-finish-load', () => {
     const args = initialFileOrUrl ? [initialFileOrUrl] : process.argv;
     handleUrlOrFile(mainWindow, args);
@@ -130,8 +120,6 @@ app.whenReady().then(() => {
   });
 });
 
-
-
 app.on('before-quit', async () => {
   console.log('[Main] App is quitting. Destroying torrent engine...');
   isQuitting = true;
@@ -140,19 +128,25 @@ app.on('before-quit', async () => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
+    // No-op
   }
 });
-
-
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function handleUrlOrFile(win, argv) {
   if (!win || win.isDestroyed() || !Array.isArray(argv)) return;
+
   const url = argv.find(arg => arg.startsWith('magnet:'));
-  if (url) win.webContents.send('magnet:received', url);
+  if (url) {
+    win.webContents.send('magnet:received', url);
+  }
+
   const file = argv.find(arg => arg.endsWith('.torrent'));
-  if (file) win.webContents.send('file:open', file);
+  if (file) {
+    win.webContents.send('file:open', file);
+  }
+
   if (url || file) {
     if (win.isMinimized()) win.restore();
     if (!win.isVisible()) win.show();
@@ -164,15 +158,29 @@ function createTray() {
   const iconPath = path.join(__dirname, '../../resources/icons/icon.png');
   const trayIcon = nativeImage.createFromPath(iconPath);
   tray = new Tray(trayIcon.resize({ width: 16, height: 16 }));
+  
   tray.setToolTip('SimpleTorrent');
+
   const contextMenu = Menu.buildFromTemplate([
-    { label: 'Открыть SimpleTorrent', click: () => mainWindow?.show() },
+    { 
+      label: 'Открыть SimpleTorrent', 
+      click: () => {
+        mainWindow?.show();
+        mainWindow?.focus();
+      } 
+    },
     { type: 'separator' },
-    { label: 'Выход', click: () => {
+    { 
+      label: 'Выход', 
+      click: () => {
         isQuitting = true;
         app.quit();
-      }}
+      } 
+    }
   ]);
+
   tray.setContextMenu(contextMenu);
-  tray.on('double-click', () => mainWindow?.show());
+  tray.on('double-click', () => {
+    mainWindow?.show();
+  });
 }

@@ -1,14 +1,15 @@
 {
   "name": "simple-torrent",
   "productName": "SimpleTorrent",
-  "version": "1.0.1",
-  "description": "A minimal, modern torrent client built with Electron and React, focused on simplicity and performance.",
+  "version": "1.0.2",
+  "description": "A modern, minimalist torrent client built with Electron and React, focused on simplicity and performance.",
   "author": {
     "name": "iamvany",
     "email": "mrvanvany@gmail.com"
   },
   "license": "ISC",
   "private": true,
+  "homepage": "https://github.com/iamvany30/simple-torrent#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/iamvany30/simple-torrent.git"
@@ -20,7 +21,10 @@
     "torrent",
     "webtorrent",
     "electron",
-    "react"
+    "react",
+    "downloader",
+    "p2p",
+    "desktop"
   ],
   "main": "electron/main.js",
   "type": "module",
@@ -30,11 +34,13 @@
     "electron:dev": "wait-on tcp:5173 && cross-env NODE_ENV=development electron .",
     "dev": "concurrently -k \"npm:react:dev\" \"npm:electron:dev\"",
     "build": "npm run react:build && electron-builder",
-    "release": "npm run react:build && electron-builder --publish always"
+    "release": "npm run react:build && electron-builder --publish always",
+    "pack": "npm run react:build && electron-builder --dir",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "chokidar": "^3.5.3",
-    "electron-updater": "^6.6.2",
+    "electron-updater": "^6.1.8",
     "i18next": "^23.8.2",
     "i18next-browser-languagedetector": "^7.2.0",
     "react": "^18.2.0",
@@ -71,6 +77,15 @@
         "repo": "simple-torrent"
       }
     ],
+    "fileAssociations": [
+      {
+        "ext": "torrent",
+        "name": "Torrent File",
+        "description": "Torrent file handled by SimpleTorrent",
+        "role": "Viewer",
+        "icon": "resources/icons/logo.ico"
+      }
+    ],
     "win": {
       "icon": "resources/icons/logo.ico",
       "target": [
@@ -98,14 +113,6 @@
         "AppImage",
         "deb"
       ]
-    },
-    "fileAssociations": [
-      {
-        "ext": "torrent",
-        "name": "Torrent File",
-        "role": "Viewer",
-        "icon": "resources/icons/logo.ico"
-      }
-    ]
+    }
   }
 }

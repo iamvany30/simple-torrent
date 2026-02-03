@@ -1,4 +1,3 @@
-// src/utils/formatters.js
 export const formatBytes = (bytes, decimals = 2) => {
   if (bytes === 0) return '0 B';
   if (!bytes || isNaN(bytes)) return '0 B';

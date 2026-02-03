@@ -46,6 +46,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-i18next": "^14.0.5",
+    "react-virtualized-auto-sizer": "^1.0.26",
+    "react-window": "^2.2.3",
     "rss-parser": "^3.13.0",
     "webtorrent": "^2.1.32"
   },
@@ -61,6 +63,7 @@
   "build": {
     "appId": "com.simpletorrent.app",
     "productName": "SimpleTorrent",
+    "copyright": "Copyright © 2024 iamvany",
     "directories": {
       "output": "release",
       "buildResources": "resources"
@@ -77,42 +80,46 @@
         "repo": "simple-torrent"
       }
     ],
-    "fileAssociations": [
-      {
-        "ext": "torrent",
-        "name": "Torrent File",
-        "description": "Torrent file handled by SimpleTorrent",
-        "role": "Viewer",
-        "icon": "resources/icons/logo.ico"
-      }
-    ],
     "win": {
       "icon": "resources/icons/logo.ico",
       "target": [
         "nsis"
-      ]
+      ],
+      "legalTrademarks": "SimpleTorrent",
+      "requestedExecutionLevel": "asInvoker",
+      "rfc3161TimestampServer": "http://timestamp.digicert.com"
     },
     "nsis": {
-      "oneClick": true,
+      "oneClick": false,
       "perMachine": false,
-      "allowToChangeInstallationDirectory": false,
+      "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "runAfterFinish": true
+      "createStartMenuShortcut": true,
+      "shortcutName": "SimpleTorrent",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": true,
+      "displayLanguageSelector": true,
+      "installerIcon": "resources/icons/logo.ico",
+      "uninstallerIcon": "resources/icons/logo.ico",
+      "uninstallDisplayName": "SimpleTorrent (Remove)"
     },
-    "mac": {
-      "icon": "resources/icons/logo.icns",
-      "category": "public.app-category.utilities",
-      "target": [
-        "dmg"
-      ]
-    },
-    "linux": {
-      "icon": "resources/icons",
-      "category": "Network",
-      "target": [
-        "AppImage",
-        "deb"
-      ]
-    }
+    "fileAssociations": [
+      {
+        "ext": "torrent",
+        "name": "Torrent File",
+        "description": "SimpleTorrent Document",
+        "role": "Editor",
+        "icon": "resources/icons/logo.ico",
+        "isPackage": true
+      },
+      {
+        "ext": "magnet",
+        "name": "Magnet Link",
+        "role": "Viewer",
+        "schemes": [
+          "magnet"
+        ]
+      }
+    ]
   }
 }

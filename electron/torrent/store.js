@@ -1,4 +1,5 @@
 import fs from 'fs';
+import fsPromises from 'fs/promises';
 import { PATHS, DEFAULT_DOWNLOAD_DIR, DEFAULTS } from './constants.js';
 
 const debounce = (fn, delay) => {
@@ -18,12 +19,13 @@ class Store {
       autoLaunch: false,
       enableWatch: false,
       watchPath: '',
+      rssFeeds: []
     });
     
     this.state = this._load(PATHS.STATE, []);
     this.rssHistory = this._load(PATHS.RSS_HISTORY, []);
 
-    this.saveState = debounce((data) => this._write(PATHS.STATE, data), DEFAULTS.saveDebounce);
+    this.saveState = debounce((data) => this._writeAsync(PATHS.STATE, data), DEFAULTS.saveDebounce);
   }
 
   getConfig() { return this.config; }
@@ -32,12 +34,12 @@ class Store {
 
   saveConfig(newConfig) {
     this.config = { ...this.config, ...newConfig };
-    this._write(PATHS.CONFIG, this.config);
+    this._writeAsync(PATHS.CONFIG, this.config);
   }
 
   saveRssHistory(history) {
     this.rssHistory = history;
-    this._write(PATHS.RSS_HISTORY, history);
+    this._writeAsync(PATHS.RSS_HISTORY, history);
   }
 
   _load(filePath, fallback) {
@@ -46,16 +48,20 @@ class Store {
         return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
       }
     } catch (e) {
-      //
+      console.warn(`[Store] Load warning for ${filePath}:`, e.message);
     }
     return fallback;
   }
 
-  _write(filePath, data) {
+  async _writeAsync(filePath, data) {
     try {
-      fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+      const tempPath = `${filePath}.tmp`;
+      const json = JSON.stringify(data, null, 2);
+      
+      await fsPromises.writeFile(tempPath, json, 'utf-8');
+      await fsPromises.rename(tempPath, filePath);
     } catch (e) {
-      console.error(`[Store] Write error:`, e.message);
+      console.error(`[Store] Async Write Error (${filePath}):`, e.message);
     }
   }
 }

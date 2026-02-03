@@ -52,8 +52,10 @@ Thumbs.db
 ehthumbs.db
 desktop.ini
 $RECYCLE.BIN/
-
+package-lock.json
 
 *.log
 logs/
 *.log.*
+
+resources

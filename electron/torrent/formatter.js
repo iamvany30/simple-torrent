@@ -1,1 +1,64 @@
-export class DataFormatter{constructor(e){this.server=e}formatSummary(e,a){return e?e.map(e=>{if(!e)return null;const t=a.has(e.infoHash),o=e.files&&e.files.length>0;let s="checking";return s=o?e.progress>=1?"completed":t?"paused":"downloading":"metadata",{id:e.infoHash,name:e.name||`Loading... (${e.infoHash?e.infoHash.slice(0,6):"..."})`,progress:e.progress||0,downloadSpeed:t?0:e.downloadSpeed||0,uploadSpeed:0,numPeers:e.numPeers||0,totalSize:e.length||0,downloaded:e.downloaded||0,uploaded:e.uploaded||0,timeRemaining:e.timeRemaining||0,isPaused:!!t,isMetadataLoaded:!!o,ratio:e.ratio||0,status:s,addedDate:e.addedDate,completedDate:e.completedDate,numFiles:o?e.files.length:0}}).filter(Boolean):[]}formatFiles(e){return e&&e.files?e.files.map((e,a)=>({index:a,name:e.name,size:e.length,progress:e.progress})):[]}formatPeers(e){return[]}}
+export class DataFormatter {
+  constructor(server) {
+    this.server = server;
+  }
+
+  formatSummary(torrents, pausedSet) {
+    if (!torrents) return [];
+
+    return torrents
+      .map(torrent => {
+        if (!torrent) return null;
+
+        const isPaused = pausedSet.has(torrent.infoHash);
+        const hasFiles = torrent.files && torrent.files.length > 0;
+        
+        let status = 'checking';
+        if (hasFiles) {
+          if (torrent.progress >= 1) {
+            status = 'completed';
+          } else if (isPaused) {
+            status = 'paused';
+          } else {
+            status = 'downloading';
+          }
+        }
+
+        return {
+          id: torrent.infoHash,
+          name: torrent.name || `Loading... (${torrent.infoHash ? torrent.infoHash.slice(0, 6) : '...'})`,
+          progress: torrent.progress || 0,
+          downloadSpeed: isPaused ? 0 : (torrent.downloadSpeed || 0),
+          uploadSpeed: torrent.uploadSpeed || 0,
+          numPeers: torrent.numPeers || 0,
+          totalSize: torrent.length || 0,
+          downloaded: torrent.downloaded || 0,
+          uploaded: torrent.uploaded || 0,
+          timeRemaining: torrent.timeRemaining || 0,
+          isPaused: !!isPaused,
+          isMetadataLoaded: !!hasFiles,
+          ratio: torrent.ratio || 0,
+          status: status,
+          addedDate: torrent.addedDate,
+          completedDate: torrent.completedDate,
+          numFiles: hasFiles ? torrent.files.length : 0
+        };
+      })
+      .filter(Boolean);
+  }
+
+  formatFiles(torrent) {
+    if (!torrent || !torrent.files) return [];
+
+    return torrent.files.map((file, index) => ({
+      index: index,
+      name: file.name,
+      size: file.length,
+      progress: file.progress
+    }));
+  }
+
+  formatPeers(torrent) {
+    return [];
+  }
+}
